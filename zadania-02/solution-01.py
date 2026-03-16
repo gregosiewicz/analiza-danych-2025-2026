@@ -5,7 +5,7 @@ PLIK_WOJEWODZTWA = "NUTS_RG_10M_2024_4326_LEVL_2.geojson"
 PLIK_MIASTA = "miasta.geojson"
 
 
-def przygotuj_wojewodztwa():
+def wczytaj_wojewodztwa():
     wojewodztwa = gpd.read_file(PLIK_WOJEWODZTWA)
     wojewodztwa = wojewodztwa[wojewodztwa["CNTR_CODE"] == "PL"][
         ["NUTS_ID", "NUTS_NAME", "geometry"]
@@ -17,7 +17,7 @@ def przygotuj_wojewodztwa():
     return wojewodztwa
 
 
-def przygotuj_miasta():
+def wczytaj_miasta():
     miasta = gpd.read_file(PLIK_MIASTA)[["@id", "name", "population", "geometry"]].copy()
     miasta = miasta.rename(
         columns={"@id": "id", "name": "nazwa", "population": "ludnosc"}
@@ -43,15 +43,15 @@ def policz_statystyki(miasta_w_wojewodztwach, wojewodztwa):
     return statystyki
 
 
-def pokaz_tytul(tekst):
+def drukuj_naglowek(tekst):
     print()
     print(tekst)
     print("=" * len(tekst))
 
 
 def main():
-    wojewodztwa = przygotuj_wojewodztwa()
-    miasta = przygotuj_miasta()
+    wojewodztwa = wczytaj_wojewodztwa()
+    miasta = wczytaj_miasta()
 
     miasta_w_wojewodztwach = gpd.sjoin(
         miasta,
@@ -61,17 +61,17 @@ def main():
     )
     statystyki = policz_statystyki(miasta_w_wojewodztwach, wojewodztwa)
 
-    pokaz_tytul("Liczba miast w województwach")
+    drukuj_naglowek("Liczba miast w województwach")
     print(statystyki[["nazwa", "liczba_miast"]].to_string(index=False))
 
-    pokaz_tytul("Województwa posortowane według liczby miast")
+    drukuj_naglowek("Województwa posortowane według liczby miast")
     print(
         statystyki[["nazwa", "liczba_miast"]]
         .sort_values("liczba_miast", ascending=False)
         .to_string(index=False)
     )
 
-    pokaz_tytul("Liczba mieszkańców miast w województwach")
+    drukuj_naglowek("Liczba mieszkańców miast w województwach")
     print(statystyki[["nazwa", "ludnosc_miast"]].to_string(index=False))
 
     wojewodztwa_2180 = wojewodztwa.to_crs(2180)
@@ -85,7 +85,7 @@ def main():
         gestosc["ludnosc_miast"] / gestosc["powierzchnia_km2"]
     )
 
-    pokaz_tytul("Województwa posortowane według gęstości zaludnienia")
+    drukuj_naglowek("Województwa posortowane według gęstości zaludnienia")
     print(
         gestosc.assign(
             gestosc_zaludnienia=gestosc["gestosc_zaludnienia"].round(2)
@@ -100,7 +100,7 @@ def main():
         & (miasta_2180.distance(warszawa) <= 50_000)
     ).sum()
 
-    pokaz_tytul("Liczba miast oddalonych od Warszawy o co najwyżej 50 km")
+    drukuj_naglowek("Liczba miast oddalonych od Warszawy o co najwyżej 50 km")
     print(liczba_miast_do_50_km)
 
     suma_odleglosci = miasta_2180["geometria"].apply(
@@ -108,7 +108,7 @@ def main():
     )
     centralne_miasto = miasta_2180.loc[suma_odleglosci.idxmin(), "nazwa"]
 
-    pokaz_tytul("Miasto o najmniejszej sumie odległości do pozostałych miast")
+    drukuj_naglowek("Miasto o najmniejszej sumie odległości do pozostałych miast")
     print(centralne_miasto)
 
 
